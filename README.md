@@ -40,12 +40,11 @@ Esta organización facilita la escalabilidad, mantenimiento y reproducibilidad d
 
 ## 👥 Integrantes
 
-* Jose Rubio
-* Integrante 2
-* Integrante 3
-* Integrante 4
-* Integrante 5
-* Integrante 6
+* Choque Diaz, Diego Angel
+* Delgado, Julia
+* Dip, Julio
+* Llave, Ubaldo
+* Rubio, José
 
 ## 🚀 Estado del proyecto
 

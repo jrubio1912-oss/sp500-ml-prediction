@@ -1,7 +1,7 @@
 pandas
 numpy
-matplotlib
+Matplotlib / Seaborn
 scikit-learn
-
+Streamlit
 
 agrego requirements.txt

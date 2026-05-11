@@ -71,10 +71,10 @@ Se utiliza GitHub Projects para la organización de tareas y seguimiento del ava
 - [x] Definición del problema  
 - [x] Dataset identificado  
 - [x] Arquitectura del sistema  
-- [ ] Feature engineering  
-- [ ] Entrenamiento del modelo  
-- [ ] Evaluación del modelo  
-- [ ] Desarrollo de aplicación (Streamlit)  
+- [x] Feature engineering  
+- [x] Entrenamiento del modelo  
+- [x] Evaluación del modelo  
+- [ ] Desarrollo de aplicación (Streamlit)
 
 
 ## Integrantes

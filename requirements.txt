@@ -1,7 +1,8 @@
 pandas
 numpy
-Matplotlib / Seaborn
 scikit-learn
-Streamlit
+xgboost
+matplotlib
+seaborn
+streamlit
 
-agrego requirements.txt

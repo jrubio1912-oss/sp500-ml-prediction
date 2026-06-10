@@ -1,96 +1,89 @@
-"""
-model.py
-Entrenamiento, predicción y evaluación del modelo Random Forest.
-"""
-
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pandas as pd
+import streamlit as st
+from lightgbm import LGBMClassifier
+from sklearn.metrics import accuracy_score, roc_auc_score
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    confusion_matrix,
-    classification_report,
-)
+from src.features import FEATURES
 
 
-def train_random_forest(X_train, y_train, n_estimators: int = 100,
-                        max_depth: int = 5, random_state: int = 42):
-    """
-    Entrena un RandomForestClassifier con class_weight='balanced'
-    para compensar el desbalance entre clases típico en datos financieros.
-    Retorna el modelo entrenado.
-    """
-    modelo = RandomForestClassifier(
-        n_estimators=n_estimators,
-        max_depth=max_depth,
-        random_state=random_state,
-        class_weight="balanced",
+DEFAULT_PARAMS = {
+    'n_estimators':      500,
+    'max_depth':         4,
+    'num_leaves':        15,
+    'learning_rate':     0.01,
+    'min_child_samples': 40,
+    'subsample':         0.8,
+    'colsample_bytree':  0.7,
+    'reg_alpha':         0.5,
+    'reg_lambda':        5.0,
+}
+
+
+@st.cache_resource(show_spinner=False)
+def train_model(_df: pd.DataFrame, train_end: str, params: dict):
+    train_mask = _df.index < train_end
+    X_train    = _df.loc[train_mask, FEATURES].dropna()
+    y_train    = _df.loc[X_train.index, 'target']
+
+    model = LGBMClassifier(
+        **params,
+        class_weight='balanced',
+        random_state=42,
+        n_jobs=-1,
+        verbose=-1,
     )
-    modelo.fit(X_train, y_train)
-    return modelo
+    model.fit(X_train, y_train)
+    return model, X_train, y_train
 
 
-def predict(modelo, X_test):
-    """
-    Retorna las clases predichas y las probabilidades de la clase positiva.
-    """
-    y_pred = modelo.predict(X_test)
-    y_proba = modelo.predict_proba(X_test)[:, 1]
-    return y_pred, y_proba
+def run_backtest(df: pd.DataFrame, model, test_start: str) -> tuple:
+    test_mask = df.index >= test_start
+    X_test    = df.loc[test_mask, FEATURES].dropna()
+    y_test    = df.loc[X_test.index, 'target']
 
+    preds = model.predict(X_test)
+    proba = model.predict_proba(X_test)[:, 1]
 
-def evaluate(y_test, y_pred) -> dict:
-    """
-    Calcula y muestra accuracy, precision, recall, F1-score
-    y el classification report completo.
-    Retorna un diccionario con las métricas principales.
-    """
+    bt = df.loc[X_test.index, ['Close']].copy()
+    bt['pred']      = preds
+    bt['prob']      = proba
+    bt['target']    = y_test
+    bt['ret']       = bt['Close'].pct_change(1).shift(-1)
+    bt['strat_ret'] = bt['pred'] * bt['ret']
+    bt['bh_ret']    = bt['ret']
+    bt = bt.dropna(subset=['strat_ret', 'bh_ret'])
+
+    bt['strat_cum'] = (1 + bt['strat_ret']).cumprod()
+    bt['bh_cum']    = (1 + bt['bh_ret']).cumprod()
+
+    # Métricas solo con filas que tienen target real
+    bt_eval = bt.dropna(subset=['target'])
+    acc    = accuracy_score(bt_eval['target'], bt_eval['pred'])
+    auc    = roc_auc_score(bt_eval['target'], bt_eval['prob'])
+    
+    sharpe = (bt['strat_ret'].mean() / bt['strat_ret'].std()) * np.sqrt(252)
+
+    cum    = bt['strat_cum']
+    dd     = (cum - cum.cummax()) / cum.cummax()
+    max_dd = dd.min()
+
     metrics = {
-        "accuracy":  accuracy_score(y_test, y_pred),
-        "precision": precision_score(y_test, y_pred),
-        "recall":    recall_score(y_test, y_pred),
-        "f1":        f1_score(y_test, y_pred),
+        'accuracy':  acc,
+        'auc':       auc,
+        'sharpe':    sharpe,
+        'max_dd':    max_dd,
+        'ret_total': bt['strat_cum'].iloc[-1] - 1,
+        'bh_total':  bt['bh_cum'].iloc[-1] - 1,
+        'n_trades':  int(bt['pred'].sum()),
+        'n_days':    len(bt),
     }
-
-    print(f"Accuracy : {metrics['accuracy']:.4f}")
-    print(f"Precision: {metrics['precision']:.4f}")
-    print(f"Recall   : {metrics['recall']:.4f}")
-    print(f"F1-score : {metrics['f1']:.4f}")
-    print()
-    print(classification_report(y_test, y_pred))
-
-    return metrics
+    return bt, metrics
 
 
-def plot_confusion_matrix(y_test, y_pred) -> None:
-    """Grafica la matriz de confusión."""
-    cm = confusion_matrix(y_test, y_pred)
-    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-    plt.xlabel("Predicción")
-    plt.ylabel("Valor real")
-    plt.title("Matriz de confusión")
-    plt.tight_layout()
-    plt.show()
-
-
-def plot_feature_importance(modelo, features: list) -> None:
-    """Grafica la importancia de cada feature según el modelo."""
-    importancias = pd.DataFrame({
-        "feature":    features,
-        "importance": modelo.feature_importances_,
-    }).sort_values(by="importance", ascending=False)
-
-    plt.figure(figsize=(10, 6))
-    sns.barplot(data=importancias, x="importance", y="feature")
-    plt.title("Importancia de variables en el modelo")
-    plt.tight_layout()
-    plt.show()
-
-    return importancias
-
+def predict_next(df_full: pd.DataFrame, model) -> tuple:
+    last      = df_full[FEATURES].dropna().iloc[[-1]]
+    pred      = model.predict(last)[0]
+    prob      = model.predict_proba(last)[0, 1]
+    last_date = df_full.index[-1].date()
+    return pred, prob, last_date

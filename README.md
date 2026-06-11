@@ -3,6 +3,30 @@
 ## Descripción
 Proyecto de Machine Learning orientado a la predicción de la dirección del índice S&P 500 al día siguiente, utilizando datos históricos descargados en tiempo real. El objetivo es asistir en la toma de decisiones mediante modelos predictivos basados en datos técnicos y macroeconómicos.
 
+## 🧠 ¿Qué hace este sistema? (resumen no técnico)
+
+Este sistema analiza el comportamiento histórico del mercado de acciones de Estados Unidos y genera una predicción sobre si el S&P 500 **subirá o bajará al día siguiente**.
+
+Para hacer esa predicción, el modelo analiza automáticamente 38 indicadores del mercado:
+- Cómo se movió el precio en los últimos días, semanas y meses
+- Qué tan nervioso está el mercado (índice VIX)
+- Cómo están las tasas de interés y el dólar
+- Señales técnicas como el RSI y el MACD que usan los analistas financieros
+
+El resultado se presenta como una señal (**↑ Sube** o **↓ Baja**) junto con una probabilidad de ocurrencia.
+
+### ¿Qué tan confiable es?
+
+El modelo acierta aproximadamente el **51-53% de las veces**. Esto puede parecer poco, pero en mercados financieros tiene un significado importante:
+
+- Predecir mercados es extremadamente difícil — los precios incorporan información de millones de operadores en tiempo real
+- Una pequeña ventaja consistente sobre el azar (similar a un casino que gana el 51% de las apuestas) puede generar valor a largo plazo
+- El modelo **no es un oráculo** — es una herramienta de apoyo, no un sistema automático de inversión
+
+> ⚠️ Este proyecto tiene fines exclusivamente educativos. No constituye asesoramiento financiero ni garantiza rentabilidad.
+
+---
+
 ## Objetivo
 Desarrollar un modelo de clasificación binaria que permita anticipar si el precio del S&P 500 subirá o bajará al día siguiente, a partir de 38 features técnicos y macroeconómicos.
 
@@ -66,6 +90,7 @@ Datos en tiempo real (yfinance)
 ├── data/                  # Datos crudos y procesados
 ├── app.py                 # App Streamlit
 ├── requirements.txt
+├── .gitignore
 ├── Dockerfile
 └── .streamlit/
     └── config.toml
@@ -154,10 +179,3 @@ Luego abrí el navegador en `http://localhost:8501`
 
 ---
 
-## Integrantes
-
-- Choque Diaz, Diego Angel
-- Delgado, Julia
-- Dip, Julio
-- Llave, Ubaldo
-- Rubio, José

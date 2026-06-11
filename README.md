@@ -1,88 +1,158 @@
 # 📊 SP500 ML Prediction
 
 ## Descripción
-Proyecto de Machine Learning orientado a la predicción de la dirección del índice S&P 500 en el corto plazo, utilizando datos históricos del mercado financiero. El objetivo es asistir en la toma de decisiones en trading intradiario mediante modelos predictivos basados en datos.
-
+Proyecto de Machine Learning orientado a la predicción de la dirección del índice S&P 500 al día siguiente, utilizando datos históricos descargados en tiempo real. El objetivo es asistir en la toma de decisiones mediante modelos predictivos basados en datos técnicos y macroeconómicos.
 
 ## Objetivo
-Desarrollar un modelo de clasificación binaria que permita anticipar si el precio del S&P 500 subirá o bajará en el siguiente período, a partir de información histórica del mercado.
-
+Desarrollar un modelo de clasificación binaria que permita anticipar si el precio del S&P 500 subirá o bajará al día siguiente, a partir de 38 features técnicos y macroeconómicos.
 
 ## Dataset
-Se utiliza un dataset de datos históricos del índice S&P 500 con frecuencia horaria (H1), compuesto por:
+Datos históricos diarios descargados en tiempo real vía `yfinance`:
 
-- Open (precio de apertura)  
-- High (precio máximo)  
-- Low (precio mínimo)  
-- Close (precio de cierre)  
-- Volume (volumen de operaciones)  
-- Cantidad de registros: ~3500  
+- **S&P 500** (^GSPC) — OHLCV diario
+- **VIX** (^VIX) — índice de volatilidad
+- **Tasas 10Y** (^TNX) — rendimiento del bono del Tesoro
+- **DXY** (DX-Y.NYB) — índice del dólar
+- **Oro** (GC=F) — precio del oro
+- Historia: hasta 20 años de datos diarios
 
+## Features del modelo (38 en total)
 
-## Enfoque del modelo
-El problema se aborda como una tarea de **clasificación supervisada**.
+| Grupo | Features |
+|---|---|
+| Retornos | 1d, 3d, 5d, 10d, 21d |
+| Volatilidad | 5d, 21d, 63d + ratio |
+| Volumen | normalizado 5d y 21d |
+| Tendencia | distancia a EMA 5/21/63/200 |
+| Momentum | RSI 14, MACD, Bollinger Bands |
+| Calendario | día de la semana, mes |
+| VIX | nivel, retornos, ratio MA, flag pánico |
+| Tasas | nivel, cambios, pendiente |
+| DXY | retornos 1d y 5d |
+| Oro | retornos 1d y 5d |
+| Correlaciones | SP500 vs VIX, SP500 vs Oro (21d) |
 
-Modelos a utilizar:
-- Random Forest  
-- XGBoost  
-
-Se seleccionan estos algoritmos por su capacidad de manejar datos tabulares, capturar relaciones no lineales y ser robustos frente al ruido típico de los mercados financieros.
-
+## Modelo
+**LightGBM** con optimización de hiperparámetros y validación temporal estricta (walk-forward). Se seleccionó por su velocidad, manejo eficiente de datos tabulares y rendimiento superior en series temporales financieras.
 
 ## Arquitectura del sistema
 
-Datos históricos (OHLCV)
-- Preprocesamiento de datos
-- Feature Engineering (RSI, EMA, retornos, volatilidad)
-- Modelo de Machine Learning
-- Predicción (sube / baja + probabilidad)
-- Visualización en aplicación web (Streamlit)
-
+Datos en tiempo real (yfinance)
+→ Preprocesamiento (src/preprocessing.py)
+→ Feature Engineering (src/features.py)
+→ Modelo LightGBM (src/model.py)
+→ Predicción + Backtest + Visualización (app.py)
 
 ## Tecnologías
-- Python  
-- Pandas / NumPy  
-- Scikit-learn / XGBoost  
-- Matplotlib / Seaborn  
-- Streamlit  
+
+- Python 3.11
+- LightGBM / Scikit-learn
+- Pandas / NumPy
+- Streamlit
+- Plotly
+- yfinance
+- Docker
 
 ## Estructura del repositorio
+├── src/
+│   ├── preprocessing.py   # Descarga de datos vía yfinance
+│   ├── features.py        # Feature engineering (38 features)
+│   └── model.py           # Entrenamiento, backtest y predicción
+├── notebooks/             # Análisis exploratorio y modelado inicial
+├── data/                  # Datos crudos y procesados
+├── app.py                 # App Streamlit
+├── requirements.txt
+├── Dockerfile
+└── .streamlit/
+    └── config.toml
 
-El proyecto se organiza en una estructura modular que permite separar datos, análisis y lógica del modelo:
--	data/: contiene los datos del proyecto, separados en datos crudos (raw) y procesados (processed).
--	notebooks/: incluye notebooks de análisis exploratorio y pruebas iniciales.
--	src/: contiene el código fuente del sistema, incluyendo preprocesamiento, generación de features y modelos.
--	README.md: documentación general del proyecto.
--	requirements.txt: librerías necesarias para reproducir el entorno.
+---
 
-Esta estructura permite separar las distintas etapas del pipeline de datos, facilitando la organización, mantenimiento y reproducibilidad del proyecto.
+## ▶ Cómo correr la app
 
-👉 https://github.com/jrubio1912-oss/sp500-ml-prediction.git
+### Opción 1 — Docker (recomendado, sin instalar nada)
 
-## Gestión del proyecto
+Requiere tener [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y corriendo.
 
-Se utiliza GitHub Projects para la organización de tareas y seguimiento del avance:
+```bash
+docker run -p 8501:8501 jrubio1912/sp500-predictor
+```
 
-👉 https://github.com/users/jrubio1912-oss/projects/1/views/1
+Luego abrí el navegador en `http://localhost:8501`
 
+---
+
+### Opción 2 — Python local
+
+**1. Clonar el repositorio**
+```bash
+git clone https://github.com/jrubio1912-oss/sp500-ml-prediction.git
+cd sp500-ml-prediction
+```
+
+**2. Crear entorno virtual**
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Mac / Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**3. Instalar dependencias**
+```bash
+pip install -r requirements.txt
+```
+
+**4. Correr la app**
+```bash
+streamlit run app.py
+```
+
+Luego abrí el navegador en `http://localhost:8501`
+
+---
+
+## Uso de la app
+
+1. Configurá los parámetros en el panel izquierdo (años de entrenamiento, fecha de corte, hiperparámetros)
+2. Presioná **▶ Entrenar y evaluar**
+3. La app descarga datos frescos, entrena el modelo y muestra:
+   - Señal del próximo día hábil (↑ Sube / ↓ Baja) con probabilidad
+   - Métricas del modelo (Accuracy, AUC-ROC, Sharpe, Max Drawdown)
+   - Gráfico de velas con indicadores seleccionables
+   - Tabs de RSI, MACD y VIX
+   - Feature importances
+   - Backtest: estrategia vs buy & hold
+   - Señales de los últimos 30 días
+
+---
 
 ## Estado del proyecto
 
-- [x] Definición del problema  
-- [x] Dataset identificado  
-- [x] Arquitectura del sistema  
-- [x] Feature engineering  
-- [x] Entrenamiento del modelo  
-- [x] Evaluación del modelo  
-- [ ] Desarrollo de aplicación (Streamlit)
+- [x] Definición del problema
+- [x] Dataset identificado
+- [x] Feature engineering (38 features)
+- [x] Entrenamiento del modelo (LightGBM)
+- [x] Evaluación y backtest
+- [x] Aplicación Streamlit
+- [x] Dockerización
+- [ ] Deploy en la nube
 
+---
+
+## Gestión del proyecto
+
+👉 [GitHub Projects](https://github.com/users/jrubio1912-oss/projects/1/views/1)
+
+---
 
 ## Integrantes
-- Choque Diaz, Diego Angel  
-- Delgado, Julia  
-- Dip, Julio  
-- Llave, Ubaldo  
-- Rubio, José  
 
-
-
+- Choque Diaz, Diego Angel
+- Delgado, Julia
+- Dip, Julio
+- Llave, Ubaldo
+- Rubio, José

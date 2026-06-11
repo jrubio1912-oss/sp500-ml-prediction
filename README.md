@@ -37,11 +37,13 @@ Datos históricos diarios descargados en tiempo real vía `yfinance`:
 
 ## Arquitectura del sistema
 
+```
 Datos en tiempo real (yfinance)
-→ Preprocesamiento (src/preprocessing.py)
-→ Feature Engineering (src/features.py)
-→ Modelo LightGBM (src/model.py)
-→ Predicción + Backtest + Visualización (app.py)
+  → Preprocesamiento (src/preprocessing.py)
+  → Feature Engineering (src/features.py)
+  → Modelo LightGBM (src/model.py)
+  → Predicción + Backtest + Visualización (app.py)
+```
 
 ## Tecnologías
 
@@ -54,6 +56,8 @@ Datos en tiempo real (yfinance)
 - Docker
 
 ## Estructura del repositorio
+
+```
 ├── src/
 │   ├── preprocessing.py   # Descarga de datos vía yfinance
 │   ├── features.py        # Feature engineering (38 features)
@@ -65,6 +69,7 @@ Datos en tiempo real (yfinance)
 ├── Dockerfile
 └── .streamlit/
     └── config.toml
+```
 
 ---
 

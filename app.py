@@ -183,7 +183,7 @@ st.markdown("""
                letter-spacing:0.15em; text-transform:uppercase; color:#4a5568;'>
     SP500 · DIRECTION MODEL
   </span>
-  <h1 style='margin:6px 0 4px; font-size:28px; font-weight:600; color:#000000;'>
+  <h1 style='margin:6px 0 4px; font-size:28px; font-weight:600; color:#e2e8f0;'>
     ¿Sube o baja el S&P500 mañana?
   </h1>
   <p style='color:#718096; font-size:14px; margin:0;'>
